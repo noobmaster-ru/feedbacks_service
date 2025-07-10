@@ -11,6 +11,7 @@ headers = {
 }
 
 
+
 def get_product_valuation_and_created_date(response: requests.Response):
     try:
         data = response.json()
