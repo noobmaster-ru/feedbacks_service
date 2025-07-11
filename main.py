@@ -37,14 +37,15 @@ def main():
                 "isAnswered": False, # False - необработанные 
                 "nmId": article_wb,
                 "take": 5,
-                "skip": 0
-                # "order": "dateDesc" # по убыванию даты 
+                "skip": 0,
+                "order": "dateDesc" # по убыванию даты 
             }
             params_aswered = {
                 "isAnswered": True, # True - обработанные
                 "nmId": article_wb,
                 "take": 5,
-                "skip": 0 
+                "skip": 0,
+                "order": "dateDesc"
             }
             # делаем два запроса одновременно
             response_not_answered = requests.get(URL_REQUEST, headers=headers, params=params_not_aswered)
