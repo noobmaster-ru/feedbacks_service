@@ -67,7 +67,7 @@ def get_product_valuation_and_created_date(response: requests.Response):
         return []
 
 def main():
-    with open("result.txt", "w", encoding="utf-8") as f:
+    with open("result_imt_id.txt", "w", encoding="utf-8") as f:
         for index , article_wb in enumerate(ARTICLES_WB):
             # time.sleep(0.0)
             params_not_aswered = {
@@ -84,6 +84,7 @@ def main():
                 "skip": SKIP_NUMBER,
                 "order": "dateDesc"
             }
+
             # делаем два запроса одновременно
             response_not_answered = requests.get(URL_REQUEST, headers=headers, params=params_not_aswered)
             response_answered = requests.get(URL_REQUEST, headers=headers, params=params_aswered)
@@ -111,36 +112,35 @@ def main():
             #   photo_fullSize: str
             # }
             all_feedbacks: list[dict] = feedbacks_answered + feedbacks_not_answered
-
+    
             # группируем по imt_id все отзывы
             grouped_by_imt: dict[int, list[dict]] = defaultdict(list)
             for fb in all_feedbacks:
                 grouped_by_imt[fb["imt_id"]].append(fb)
 
             # dict{ nm_id: cредний рейтинг по последним 5 отзывам в группе imt_id }
-            nm_id_to_avg_rating: dict[int, float] = {}
+            nm_id_to_avg_rating: dict[int, float | str] = {}
 
             for imt_id, feedback_list in grouped_by_imt.items():
                 # сортируем все отзывы по дате убывания
                 feedback_list_sorted = sorted(feedback_list, key=lambda x: x["created_dt"], reverse=True)
                
-                # берём последние 5 отзывов
-                last_5_ratings = [fb["product_valuation"] for fb in feedback_list_sorted[:5]]
-
-                if not last_5_ratings:
-                    continue  # нет отзывов
-
-                avg_rating = round(mean(last_5_ratings), 1)
-
                 # cобираем уникальные nm_id в этой группе
                 nm_ids_in_group = {fb["nm_id"] for fb in feedback_list_sorted}
-
-                for nm_id in nm_ids_in_group:
-                    nm_id_to_avg_rating[nm_id] = avg_rating
+                
+                # берём последние 5 отзывов
+                last_5_ratings = [fb["product_valuation"] for fb in feedback_list_sorted[:5]]
+                
+                if not last_5_ratings:
+                    # нет отзывов
+                    nm_id_to_avg_rating[article_wb] = "no feedbacks"
+                else:
+                    for nm_id in nm_ids_in_group:
+                        nm_id_to_avg_rating[nm_id] = round(mean(last_5_ratings), 1)
 
             for nm_id, avg in nm_id_to_avg_rating.items():
-                print(f"{nm_id}: {avg:.2f}")
-                f.write(f"{nm_id}: {avg:.2f}\n")
+                print(f"{nm_id}: {avg}")
+                f.write(f"{nm_id}: {avg}\n")
 
 
 if __name__ == "__main__":
