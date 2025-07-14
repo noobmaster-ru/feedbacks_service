@@ -1,5 +1,4 @@
 import requests 
-import time
 from datetime import datetime
 from statistics import mean
 
@@ -62,10 +61,12 @@ def get_product_valuation_and_created_date(response: requests.Response):
         print("❌ Ошибка при парсинге ответа:", e)
         return []
 
-def main():
+if __name__ == "__main__":
+    headers = {
+        'Authorization': WB_TOKEN
+    }
     with open("result_nm_id.txt", "w", encoding="utf-8") as file:
-        for  article_wb in ARTICLES_WB:
-            time.sleep(0.5)
+        for article_wb in ARTICLES_WB:
             params_not_aswered = {
                 "isAnswered": False, # False - необработанные 
                 "nmId": article_wb,
@@ -105,16 +106,10 @@ def main():
 
             # берём последние 5 отзывов
             last_5_ratings = [fb["product_valuation"] for fb in feedback_list_sorted[:5]]
-            if len(last_5_ratings) > 0:
+            if last_5_ratings:
                 avg_rating = round(mean(last_5_ratings), 1)
                 print(f"{article_wb}: {avg_rating}")
                 file.write(f"{article_wb}: {avg_rating}\n")
             else:
                 print(f"{article_wb}: no feedbacks")
                 file.write(f"{article_wb}: no feedbacks\n")
-
-if __name__ == "__main__":
-    headers = {
-        'Authorization': WB_TOKEN
-    }
-    main()

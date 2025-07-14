@@ -1,8 +1,5 @@
 import requests 
-import json
-import time
 from datetime import datetime
-import os 
 from collections import defaultdict
 from statistics import mean
 
@@ -70,10 +67,16 @@ def get_product_valuation_and_created_date(response: requests.Response):
         print("❌ Ошибка при парсинге ответа:", e)
         return []
 
-def main():
+
+if __name__ == "__main__":
+    headers = {
+        'Authorization': WB_TOKEN
+    }
+
     with open("result_imt_id.txt", "w", encoding="utf-8") as f:
-        for index , article_wb in enumerate(ARTICLES_WB):
-            time.sleep(0.5)
+        grouped_by_imt_id = defaultdict(list)  # ключ: imt_id, значение: list[dict отзывов]
+        
+        for article_wb in ARTICLES_WB:
             params_not_aswered = {
                 "isAnswered": False, # False - необработанные 
                 "nmId": article_wb,
@@ -113,38 +116,37 @@ def main():
             all_feedbacks: list[dict] = feedbacks_answered + feedbacks_not_answered
     
             # группируем по imt_id все отзывы
-            grouped_by_imt: dict[int, list[dict]] = defaultdict(list)
             for fb in all_feedbacks:
-                grouped_by_imt[fb["imt_id"]].append(fb)
-
-            # dict{ nm_id: cредний рейтинг по последним 5 отзывам в группе imt_id }
-            nm_id_to_avg_rating: dict[int, float | str] = {}
-
-            for imt_id, feedback_list in grouped_by_imt.items():
-                # сортируем все отзывы по дате убывания
-                feedback_list_sorted = sorted(feedback_list, key=lambda x: x["created_dt"], reverse=True)
-               
-                # cобираем уникальные nm_id в этой группе
-                nm_ids_in_group = {fb["nm_id"] for fb in feedback_list_sorted}
-                
-                # берём последние 5 отзывов
-                last_5_ratings = [fb["product_valuation"] for fb in feedback_list_sorted[:5]]
-                
-                if not last_5_ratings:
-                    # нет отзывов
-                    nm_id_to_avg_rating[article_wb] = "no feedbacks"
-                else:
-                    for nm_id in nm_ids_in_group:
-                        nm_id_to_avg_rating[nm_id] = round(mean(last_5_ratings), 1)
-
-            for nm_id, avg in nm_id_to_avg_rating.items():
-                print(f"{nm_id}: {avg}")
-                f.write(f"{nm_id}: {avg}\n")
+                grouped_by_imt_id[fb["imt_id"]].append(fb)
+        
+        # словарь nm_id -> average_rating
+        nm_id_to_avg_rating: dict[int, float | str] = {}
 
 
-if __name__ == "__main__":
-    headers = {
-        'Authorization': WB_TOKEN
-    }
-    
-    main()
+        for imt_id, feedback_list in grouped_by_imt_id.items():
+            # сортируем все отзывы по дате убывания
+            feedback_list_sorted = sorted(feedback_list, key=lambda x: x["created_dt"], reverse=True)
+            last_5 = feedback_list_sorted[:5]
+
+            # ВСЕ уникальные nm_id по ВСЕМ отзывам в группе
+            all_nm_ids_in_group = {fb["nm_id"] for fb in feedback_list}
+
+            if last_5:
+                # средний рейтинг по последним 5 отзывам
+                avg_rating = round(mean([fb["product_valuation"] for fb in last_5]), 1)  
+                for nm_id in all_nm_ids_in_group:
+                    nm_id_to_avg_rating[nm_id] = avg_rating    
+            # else:
+            #     # нет отзывов - присваиваем всем nm_id в этой группе значение -1
+            #     for nm_id in all_nm_ids_in_group:
+            #         nm_id_to_avg_rating[nm_id] = "no feedbacks"
+            
+        # 3. Добавим "no feedbacks" для тех артикулов, которых вообще не было в отзывах
+        for article_wb in ARTICLES_WB:
+            if article_wb not in nm_id_to_avg_rating:
+                nm_id_to_avg_rating[article_wb] = "no feedbacks"
+
+        # nm_id: average_rating | "no feedbacks" 
+        for nm_id, average_rating in nm_id_to_avg_rating.items():
+            print(f"{nm_id}: {average_rating}")
+            f.write(f"{nm_id}: {average_rating}\n")
