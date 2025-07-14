@@ -15,7 +15,12 @@ def get_product_valuation_and_created_date(response: requests.Response):
         # извлекаем список всех отзывов 
         feedbacks = data.get("data", {}).get("feedbacks", [])
         
-        # добавляем дату создания и возвращаем список кортежей (productValuation,createdDate)
+        # добавляем дату создания и возвращаем список словарей 
+        # {
+        #   productValuation: int,
+        #   createdDate: datetime,
+        #    ...
+        # }
         # !!! если у нас text , pros , cons , photoLinks not Null!!!!
         result = []
         for fb in feedbacks:
@@ -58,7 +63,6 @@ def get_product_valuation_and_created_date(response: requests.Response):
                         "video_preview_image": preview_image,
                         "photo_fullSize[0][0]": photo_fullSize
                     })
-                    # print([product_valuation, created_dt, nm_id, imt_id, text, pros, cons, preview_image, photo_fullSize])
             except Exception as e:
                 print("❌ Ошибка при парсинге даты:", created_date, e)
         return result
@@ -69,7 +73,7 @@ def get_product_valuation_and_created_date(response: requests.Response):
 def main():
     with open("result_imt_id.txt", "w", encoding="utf-8") as f:
         for index , article_wb in enumerate(ARTICLES_WB):
-            # time.sleep(0.0)
+            time.sleep(0.5)
             params_not_aswered = {
                 "isAnswered": False, # False - необработанные 
                 "nmId": article_wb,
@@ -89,12 +93,7 @@ def main():
             response_not_answered = requests.get(URL_REQUEST, headers=headers, params=params_not_aswered)
             response_answered = requests.get(URL_REQUEST, headers=headers, params=params_aswered)
             
-            # сохраняем JSON с русскими символами
-            with open(f"feedbacks_json/answered/ans_{index}.json", "w", encoding="utf-8") as json_file:
-                json.dump(response_not_answered.json(), json_file, ensure_ascii=False, indent=2)
-            with open(f"feedbacks_json/not_answered/not_ans_{index}.json", "w", encoding="utf-8") as json_file:
-                json.dump(response_answered.json(), json_file, ensure_ascii=False, indent=2)
-            
+
             # парсим рейтинг отзыва и время создания в список кортежей: (рейтинг, время_создания)
             feedbacks_not_answered = get_product_valuation_and_created_date(response_not_answered)
             feedbacks_answered = get_product_valuation_and_created_date(response_answered)
@@ -148,11 +147,4 @@ if __name__ == "__main__":
         'Authorization': WB_TOKEN
     }
     
-    # создание директорий для файлов json
-    output_dir = "feedbacks_json/answered"
-    os.makedirs(output_dir, exist_ok=True)
-    output_dir = "feedbacks_json/not_answered"
-    os.makedirs(output_dir, exist_ok=True)
-
     main()
-

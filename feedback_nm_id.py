@@ -1,9 +1,6 @@
 import requests 
-import json
 import time
 from datetime import datetime
-import os 
-from collections import defaultdict
 from statistics import mean
 
 from constants import ARTICLES_WB, WB_TOKEN, URL_REQUEST, TAKE_NUMBER, SKIP_NUMBER
@@ -15,7 +12,12 @@ def get_product_valuation_and_created_date(response: requests.Response):
         # извлекаем список всех отзывов 
         feedbacks = data.get("data", {}).get("feedbacks", [])
         
-        # добавляем дату создания и возвращаем список кортежей (productValuation,createdDate)
+        # добавляем дату создания и возвращаем список словарей 
+        # {
+        #   productValuation: int, 
+        #   createdDate: datetime ,
+        #   ...
+        # }
         # !!! если у нас text , pros , cons , photoLinks not Null!!!!
         result = []
         for fb in feedbacks:
@@ -53,7 +55,6 @@ def get_product_valuation_and_created_date(response: requests.Response):
                         "video_preview_image": preview_image,
                         "photo_fullSize[0][0]": photo_fullSize
                     })
-                    # print([product_valuation, created_dt, text, pros, cons, preview_image, photo_fullSize])
             except Exception as e:
                 print("❌ Ошибка при парсинге даты:", created_date, e)
         return result
@@ -83,12 +84,7 @@ def main():
             response_not_answered = requests.get(URL_REQUEST, headers=headers, params=params_not_aswered)
             response_answered = requests.get(URL_REQUEST, headers=headers, params=params_aswered)
             
-            # сохраняем JSON с русскими символами
-            # with open(f"feedbacks_json/answered/ans_{index}.json", "w", encoding="utf-8") as json_file:
-            #     json.dump(response_not_answered.json(), json_file, ensure_ascii=False, indent=2)
-            # with open(f"feedbacks_json/not_answered/not_ans_{index}.json", "w", encoding="utf-8") as json_file:
-            #     json.dump(response_answered.json(), json_file, ensure_ascii=False, indent=2)
-            
+
             # парсим рейтинг отзыва и время создания в список кортежей: (рейтинг, время_создания)
             feedbacks_not_answered = get_product_valuation_and_created_date(response_not_answered)
             feedbacks_answered = get_product_valuation_and_created_date(response_answered)
@@ -104,12 +100,11 @@ def main():
             #   photo_fullSize: str
             # }
             all_feedbacks: list[dict] = feedbacks_answered + feedbacks_not_answered
-            # print(article_wb)
+
             feedback_list_sorted = sorted(all_feedbacks, key=lambda x: x["created_dt"], reverse=True)
-            # print(feedback_list_sorted)
+
             # берём последние 5 отзывов
             last_5_ratings = [fb["product_valuation"] for fb in feedback_list_sorted[:5]]
-            # print(last_5_ratings)
             if len(last_5_ratings) > 0:
                 avg_rating = round(mean(last_5_ratings), 1)
                 print(f"{article_wb}: {avg_rating}")
@@ -118,47 +113,8 @@ def main():
                 print(f"{article_wb}: no feedbacks")
                 file.write(f"{article_wb}: no feedbacks\n")
 
-            # # группируем по imt_id все отзывы
-            # grouped_by_imt: dict[int, list[dict]] = defaultdict(list)
-            # for fb in all_feedbacks:
-            #     grouped_by_imt[fb["imt_id"]].append(fb)
-
-            # # dict{ nm_id: cредний рейтинг по последним 5 отзывам в группе imt_id }
-            # nm_id_to_avg_rating: dict[int, float] = {}
-
-            # for imt_id, feedback_list in grouped_by_imt.items():
-            #     # сортируем все отзывы по дате убывания
-            #     feedback_list_sorted = sorted(feedback_list, key=lambda x: x["created_dt"], reverse=True)
-               
-            #     # берём последние 5 отзывов
-            #     last_5_ratings = [fb["product_valuation"] for fb in feedback_list_sorted[:5]]
-
-            #     if not last_5_ratings:
-            #         continue  # нет отзывов
-
-            #     avg_rating = round(mean(last_5_ratings), 1)
-
-            #     # cобираем уникальные nm_id в этой группе
-            #     nm_ids_in_group = {fb["nm_id"] for fb in feedback_list_sorted}
-
-            #     for nm_id in nm_ids_in_group:
-            #         nm_id_to_avg_rating[nm_id] = avg_rating
-
-            # for nm_id, avg in nm_id_to_avg_rating.items():
-            #     print(f"{nm_id}: {avg:.2f}")
-            #     f.write(f"{nm_id}: {avg:.2f}\n")
-
-
 if __name__ == "__main__":
     headers = {
         'Authorization': WB_TOKEN
     }
-    
-    # создание директорий для файлов json
-    output_dir = "feedbacks_json/answered"
-    os.makedirs(output_dir, exist_ok=True)
-    output_dir = "feedbacks_json/not_answered"
-    os.makedirs(output_dir, exist_ok=True)
-    print("[product_valuation, created_dt, text, pros, cons, preview_image, photo_fullSize]")
     main()
-
