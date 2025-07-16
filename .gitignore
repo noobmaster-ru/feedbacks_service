@@ -1,6 +1,7 @@
 constants.py
-venv/
+.venv/
 __pycache__/
 *.pyc
 .DS_Store
 feedbacks_json/
+.ruff_cache/
