@@ -136,3 +136,4 @@ if __name__ == "__main__":
             else:
                 print(f"{article_wb}: no feedbacks")
                 file.write(f"{article_wb}: no feedbacks\n")
+        file.close()

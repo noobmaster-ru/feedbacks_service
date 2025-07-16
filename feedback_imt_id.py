@@ -151,3 +151,4 @@ if __name__ == "__main__":
         for nm_id, average_rating in nm_id_to_avg_rating.items():
             print(f"{nm_id}: {average_rating}")
             f.write(f"{nm_id}: {average_rating}\n")
+    f.close()
