@@ -137,10 +137,6 @@ if __name__ == "__main__":
                 avg_rating = round(mean([fb["product_valuation"] for fb in last_5]), 1)  
                 for nm_id in all_nm_ids_in_group:
                     nm_id_to_avg_rating[nm_id] = avg_rating    
-            # else:
-            #     # нет отзывов - присваиваем всем nm_id в этой группе значение -1
-            #     for nm_id in all_nm_ids_in_group:
-            #         nm_id_to_avg_rating[nm_id] = "no feedbacks"
             
         # добавляем "no feedbacks" для тех артикулов, у которых вообще нет отзывов
         for article_wb in ARTICLES_WB:

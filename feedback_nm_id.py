@@ -1,7 +1,7 @@
 import requests 
 from datetime import datetime
 from statistics import mean
-
+import time
 from constants import ARTICLES_WB, WB_TOKEN, URL_REQUEST, TAKE_NUMBER, SKIP_NUMBER
 
 
@@ -30,7 +30,7 @@ def get_product_valuation_and_created_date(response: requests.Response):
             pros = fb.get("pros", "").strip() 
             cons = fb.get("cons", "").strip() 
 
-            feedback_id = fb.get("id", "")
+            feedback_id = fb.get("id")
             parent_feedback_id = fb.get("parentFeedbackId") 
 
 
@@ -53,32 +53,40 @@ def get_product_valuation_and_created_date(response: requests.Response):
 
  
         
-                if any([text, cons, pros, photo_fullSize,preview_image]):
+                if any([text, cons, pros, photo_fullSize, preview_image]):
                     new_feedback = {
                         "id": feedback_id,
                         "product_valuation": product_valuation,
                         "created_dt": created_dt,
-                        "text": text or "",
-                        "pros": pros or "",
-                        "cons": cons or "",
+                        "text": text,
+                        "pros": pros,
+                        "cons": cons,
                         "video_preview_image": preview_image,
                         "photo_fullSize[0][0]": photo_fullSize,
-                        "parent_feedback_id": parent_feedback_id or ""
+                        "parent_feedback_id": parent_feedback_id
                     }
-                    #  если это обновлённый отзыв — удаляем старый
-                    if parent_feedback_id:
-                        del feedback_by_id[parent_feedback_id]
-                        # feedback_by_id.pop(parent_feedback_id)
-                    
                     # добавляем текущий отзыв
-                    feedback_by_id[feedback_id] = new_feedback   
+                    feedback_by_id[feedback_id] = new_feedback
+
+                    # #  если это обновлённый отзыв — удаляем старый
+                    # if parent_feedback_id is not None:
+                    #     if parent_feedback_id in feedback_by_id:  # Явная проверка наличия ключа
+                    #         del feedback_by_id[parent_feedback_id]
+                    #         print(f"✅ Удалён родительский отзыв {parent_feedback_id} (новый отзыв: {feedback_id})")
+                    #     else:
+                    #         print(f"⚠️ parent_feedback_id {parent_feedback_id} не найден в feedback_by_id (новый отзыв: {feedback_id})")
+                  
             except Exception as e:
                 print(f"❌ Ошибка при парсинге отзыва {feedback_id if 'feedback_id' in locals() else 'unknown'}: {type(e).__name__} - {e}")
+        # второй проход - безопасное удаление parentFeedbackId
+        for fb in feedbacks:
+            feedback_id = fb.get("id")
+            parent_feedback_id = fb.get("parentFeedbackId")
+            
+            if parent_feedback_id is not None and parent_feedback_id in feedback_by_id:
+                del feedback_by_id[parent_feedback_id]
+
         result = list(feedback_by_id.values())
-        
-        # for feedback in feedback_by_id:
-        #     if feedback["parent_feedback_id"]:
-        #         del feedback_by_id[feedback["parent_feedback_id"]]
         return result
     except Exception as e:
         print("❌ Ошибка при парсинге ответа:", e)
@@ -90,6 +98,7 @@ if __name__ == "__main__":
     }
     with open("result_nm_id.txt", "w", encoding="utf-8") as file:
         for article_wb in ARTICLES_WB:
+            time.sleep(1.0)
             params_not_aswered = {
                 "isAnswered": False, # False - необработанные 
                 "nmId": article_wb,
