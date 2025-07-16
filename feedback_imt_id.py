@@ -47,7 +47,8 @@ def get_product_valuation_and_created_date(response: requests.Response):
                 try:
                     photo_fullSize = photo_links[0].get("fullSize", "")
                 except:
-                    photo_fullSize = ""    
+                    photo_fullSize = ""  
+
                 if (text != "" or cons != "" or pros != "" or photo_fullSize != "" or preview_image != ""):
                     result.append({
                         "product_valuation": product_valuation,
@@ -141,7 +142,7 @@ if __name__ == "__main__":
             #     for nm_id in all_nm_ids_in_group:
             #         nm_id_to_avg_rating[nm_id] = "no feedbacks"
             
-        # 3. Добавим "no feedbacks" для тех артикулов, которых вообще не было в отзывах
+        # добавляем "no feedbacks" для тех артикулов, у которых вообще нет отзывов
         for article_wb in ARTICLES_WB:
             if article_wb not in nm_id_to_avg_rating:
                 nm_id_to_avg_rating[article_wb] = "no feedbacks"

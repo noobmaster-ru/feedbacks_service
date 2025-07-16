@@ -19,43 +19,66 @@ def get_product_valuation_and_created_date(response: requests.Response):
         # }
         # !!! если у нас text , pros , cons , photoLinks not Null!!!!
         result = []
+        
+        # вспомогательный словарь для хранения всех отзывов
+        feedback_by_id = {}
         for fb in feedbacks:
-            video = fb.get("video")
+            video = fb.get("video") or ""
             photo_links = fb.get("photoLinks") or []
 
-            text = fb.get("text", "").strip()
-            pros = fb.get("pros", "").strip()
-            cons = fb.get("cons", "").strip()
-            try:
-                product_valuation = fb.get("productValuation")
-                created_date = fb.get("createdDate")
+            text = fb.get("text", "").strip() 
+            pros = fb.get("pros", "").strip() 
+            cons = fb.get("cons", "").strip() 
 
+            feedback_id = fb.get("id", "")
+            parent_feedback_id = fb.get("parentFeedbackId") 
+
+
+            try:
+                product_valuation = fb.get("productValuation", "")
+                created_date = fb.get("createdDate", "")
                 created_dt = datetime.fromisoformat(created_date.replace("Z", "+00:00"))
                 
                 # длительность видео (если есть)
                 try:
-                    preview_image = video.get("previewImage", "")
+                    preview_image = video.get("previewImage", "") 
                 except:
                     preview_image = ""
-               
+
                 # первая ссылку на фото (если она есть)
                 try:
                     photo_fullSize = photo_links[0].get("fullSize", "")
                 except:
-                    photo_fullSize = ""   
-     
-                if (text != "" or cons != "" or pros != "" or photo_fullSize != "" or preview_image != ""):
-                    result.append({
+                    photo_fullSize = ""
+
+ 
+        
+                if any([text, cons, pros, photo_fullSize,preview_image]):
+                    new_feedback = {
+                        "id": feedback_id,
                         "product_valuation": product_valuation,
                         "created_dt": created_dt,
-                        "text": text,
-                        "pros": pros,
-                        "cons": cons,
+                        "text": text or "",
+                        "pros": pros or "",
+                        "cons": cons or "",
                         "video_preview_image": preview_image,
-                        "photo_fullSize[0][0]": photo_fullSize
-                    })
+                        "photo_fullSize[0][0]": photo_fullSize,
+                        "parent_feedback_id": parent_feedback_id or ""
+                    }
+                    #  если это обновлённый отзыв — удаляем старый
+                    if parent_feedback_id:
+                        del feedback_by_id[parent_feedback_id]
+                        # feedback_by_id.pop(parent_feedback_id)
+                    
+                    # добавляем текущий отзыв
+                    feedback_by_id[feedback_id] = new_feedback   
             except Exception as e:
-                print("❌ Ошибка при парсинге даты:", created_date, e)
+                print(f"❌ Ошибка при парсинге отзыва {feedback_id if 'feedback_id' in locals() else 'unknown'}: {type(e).__name__} - {e}")
+        result = list(feedback_by_id.values())
+        
+        # for feedback in feedback_by_id:
+        #     if feedback["parent_feedback_id"]:
+        #         del feedback_by_id[feedback["parent_feedback_id"]]
         return result
     except Exception as e:
         print("❌ Ошибка при парсинге ответа:", e)
