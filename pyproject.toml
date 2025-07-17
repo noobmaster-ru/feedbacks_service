@@ -1,0 +1,7 @@
+[project]
+
+[tool.ruff]
+line-length = 88
+
+[project.optional-dependencies]
+dev = ["ruff"]
