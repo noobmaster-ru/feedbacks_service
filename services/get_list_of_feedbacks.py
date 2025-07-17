@@ -29,11 +29,11 @@ def get_list_of_feedbacks(response: Response):
             created_dt = datetime.fromisoformat(created_date.replace("Z", "+00:00"))
 
             # длительность видео (если есть)
-            video = fb.get("video") or ""
+            video = fb.get("video")
             preview_image = (video or {}).get("previewImage", "")
 
             # первая ссылку на фото (если она есть)
-            photo_links = fb.get("photoLinks") or []
+            photo_links = fb.get("photoLinks")
             photo_full_size_link = (
                 photo_links[0].get("fullSize", "")
                 if isinstance(photo_links, list) and len(photo_links) > 0

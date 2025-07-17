@@ -61,7 +61,6 @@ if __name__ == "__main__":
 
             # ВСЕ уникальные nm_id по ВСЕМ отзывам в группе
             all_nm_ids_in_group = {fb["nm_id"] for fb in feedback_list}
-
             if last_5:
                 # средний рейтинг по последним 5 отзывам
                 avg_rating = round(mean([fb["product_valuation"] for fb in last_5]), 1)
