@@ -1,9 +1,12 @@
 {
-    "221340308": {
-        "nm_id": 221340308,
-        "last_five_feedback_rating": 4.2,
-        "advantages": "Все отлично! Спасибо за подарок ✋",
-        "disadvantages": "",
-        "text": ""
+    "242579267": {
+        "nm_id": 242579267,
+        "last_five_feedback_rating": "Error in parse_last_five_feedbacks_rating_nm_id",
+        "Error": "object of type 'NoneType' has no len()"
+    },
+    "320824751": {
+        "nm_id": 320824751,
+        "last_five_feedback_rating": "Error in parse_last_five_feedbacks_rating_nm_id",
+        "Error": "'builtin_function_or_method' object is not subscriptable"
     }
 }
