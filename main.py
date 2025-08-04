@@ -23,6 +23,6 @@ async def main():
             json.dump(feedbacks, f, indent=4, ensure_ascii=False)
         return None
 if __name__ == "__main__":
-    shutil.rmtree(".data")
+    # shutil.rmtree(".data")
     os.makedirs(".data", exist_ok=True)
     asyncio.run(main())

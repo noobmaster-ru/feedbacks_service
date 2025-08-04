@@ -40,13 +40,13 @@ class ParseFeedbacks:
                 print(f"{nm_id},card_resp status = ",response.status)
                 data = await response.json()
                 root = data["products"][0]["root"]
-                # print(root, nm_id)
+                print(root, nm_id)
                 headers = {
                     'accept': '*/*',
                     'accept-language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
                     'origin': 'https://www.wildberries.ru',
                     'priority': 'u=1, i',
-                    'referer': f'https://www.wildberries.ru/catalog/{nm_id}/detail.aspx?targetUrl=SP',
+                    'referer': f'https://www.wildberries.ru/catalog/{nm_id}/detail.aspx',
                     'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
                     'sec-ch-ua-mobile': '?1',
                     'sec-ch-ua-platform': '"Android"',
@@ -55,7 +55,7 @@ class ParseFeedbacks:
                     'sec-fetch-site': 'cross-site',
                     'user-agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36',
                 }
-                async with session.get(f"https://feedbacks1.wb.ru/feedbacks/v2/{str(root)}", headers=headers) as resp:
+                async with session.get(f"https://feedbacks2.wb.ru/feedbacks/v2/{str(root)}", headers=headers) as resp:
                     print(f"{nm_id},feedback_resp status = ",resp.status)
                     data = await resp.json()
                     try:
