@@ -40,19 +40,27 @@ def get_list_of_feedbacks(response: Response):
                 else ""
             )
 
+            # теги покупателя 
+            bables = fb.get("bables")
+            tags = (
+                bables
+                if isinstance(bables, list) and len(bables) > 0
+                else ""
+            )
             # фильтр на непустой отзыв(тк только такие видны на сайте вб)
-            if any([text, cons, pros, photo_full_size_link, preview_image]):
+            if any([text, cons, pros, photo_full_size_link, preview_image, tags]):
                 # добавляем текущий отзыв
                 feedback_by_id[feedback_id] = {
                     "id": feedback_id,
                     "parent_feedback_id": parent_feedback_id,
                     "product_valuation": product_valuation,
-                    "created_dt": created_dt,
+                    "created_date": created_dt,
                     "nm_id": nm_id,
                     "imt_id": imt_id,
                     "text": text,
                     "pros": pros,
                     "cons": cons,
+                    "tags": tags,
                     "video_preview_image": preview_image,
                     "photo_fullSize[0][0]": photo_full_size_link,
                 }
