@@ -24,11 +24,12 @@ class WBApiParseClass():
                 state = fb.get("state") or {}
                 if state == "wbRu":
                     is_answered = True
-                    # answer = fb.get("answer", {})
-                    # answer_text = answer.get("text")
                 else:
                     is_answered = False
-                    # answer_text = None
+                
+                answer = None
+                if is_answered:
+                    answer = fb.get("answer")
 
                 product_details = fb.get("productDetails", {})
                 nm_id = product_details.get("nmId")
@@ -72,7 +73,7 @@ class WBApiParseClass():
                         "cons": cons,
                         "tags": tags,
                         "is_answered": is_answered,
-                        # "answer_text": answer_text,
+                        "answer": answer,
                         "video_preview_image": preview_image,
                         "photo_fullSize[0][0]": photo_full_size_link,
                     }

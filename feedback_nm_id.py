@@ -57,7 +57,7 @@ if __name__ == "__main__":
                 "cons": fb.get("cons", ""),
                 "tags": fb.get("tags", []) or [],
                 "is_answered": fb.get("is_answered"), 
-                # "answer_text": fb.get("answer_text")
+                "answer": fb.get("answer")
             })
 
         # --- Сортировка по дате ---

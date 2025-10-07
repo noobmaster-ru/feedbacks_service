@@ -7,10 +7,6 @@ import pandas as pd
 import time
 
 
-
-# from services.get_last_feedbacks import get_last_feedbacks
-
-
 from services.wb_api_parsing_class import WBApiParseClass
 
 if __name__ == "__main__":
@@ -28,7 +24,7 @@ if __name__ == "__main__":
     df = pd.read_csv(file_path_nm_ids)
 
     wb_api_parser = WBApiParseClass()
-    # nm_ids = [251598270, 418395621, 394125519]  # пример списка артикулов/nmID
+
     nm_ids = df["nmID"].tolist()
     all_feedbacks = []  # здесь будут ВСЕ отзывы со всех nm_id
     for nm in nm_ids:
