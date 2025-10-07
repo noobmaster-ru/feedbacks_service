@@ -6,3 +6,4 @@ __pycache__/
 feedbacks_json/
 .ruff_cache/
 .env
+*.json

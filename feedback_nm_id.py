@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from services.get_list_of_feedbacks import get_list_of_feedbacks
 
 
-def get_last_feedbacks(nm_id: int, URL_FEEDBACK_LIST: str, NUMBER_OF_FEEDBACKS_NEED: int):
+def get_last_feedbacks(nm_id: int, HEADERS: dict, URL_FEEDBACK_LIST: str, NUMBER_OF_FEEDBACKS_NEED: int):
     # url = "https://feedbacks-api.wildberries.ru/api/v1/feedbacks"
     params_answered = {
         "isAnswered": True, 
@@ -66,10 +66,10 @@ if __name__ == "__main__":
     df = pd.read_csv(file_path_nm_ids)
 
     # nm_ids = [251598270, 418395621, 394125519]  # пример списка артикулов/nmID
-    nm_ids = df["nmID"]
-    all_feedbacks = []
+    nm_ids = df["nmID"].tolist()
+    all_feedbacks = []  # здесь будут ВСЕ отзывы со всех nm_id
     for nm in nm_ids:
-        feedbacks = get_last_feedbacks(nm, URL_FEEDBACK_LIST, NUMBER_OF_FEEDBACKS_NEED) 
+        feedbacks = get_last_feedbacks(nm, HEADERS, URL_FEEDBACK_LIST, NUMBER_OF_FEEDBACKS_NEED) 
         # all_feedbacks[nm] = feedbacks
         all_feedbacks.append(feedbacks)
         print(f"complete {nm}")
@@ -102,6 +102,6 @@ if __name__ == "__main__":
             feedbacks_by_nm[nm_id].append(fb_clean)
 
     # --- Сохранение в JSON ---
-    with open("wb_all_feedbacks.json", "w", encoding="utf-8") as f:
+    with open("wb_last_5_feedbacks_by_nm_id.json", "w", encoding="utf-8") as f:
         json.dump(feedbacks_by_nm, f, ensure_ascii=False, indent=2)
-    print("✅ Данные сохранены в wb_all_feedbacks.json")
+    print("✅ Данные сохранены в wb_last_5_feedbacks_by_nm_id.json")
