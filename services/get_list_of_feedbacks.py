@@ -19,6 +19,8 @@ def get_list_of_feedbacks(response: Response):
             text = fb.get("text", "").strip()
             pros = fb.get("pros", "").strip()
             cons = fb.get("cons", "").strip()
+            state = fb.get("state", "")
+            answer = fb.get("answer", {})
 
             product_details = fb.get("productDetails", {})
             nm_id = product_details.get("nmId")
@@ -61,6 +63,8 @@ def get_list_of_feedbacks(response: Response):
                     "pros": pros,
                     "cons": cons,
                     "tags": tags,
+                    "is_answered": state == "wbRu",
+                    "answer": answer.get("text",""),
                     "video_preview_image": preview_image,
                     "photo_fullSize[0][0]": photo_full_size_link,
                 }
