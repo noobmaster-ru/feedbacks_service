@@ -1,11 +1,13 @@
 # feedbacks_service
+
 feedback_nm_id.py - возвращает статистику по каждому артикулу 
+
 feedback_imt_id.py - возвращает статистику по каждой карточке
 
 для запуска нужен список nm_ids - получаем его get_nm_id.py
+
 сначала запустить python get_nm_id.py, затем python feedback_nm_id/imt_id.py
 
-в 
 ```
 {
     "251598270": { // nm_id or imt_id
