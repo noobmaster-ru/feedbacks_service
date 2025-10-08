@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import os
 import pandas as pd
 import time
-
+from statistics import mean
 
 from services.wb_api_parsing_class import WBApiParseClass
 
@@ -27,6 +27,8 @@ if __name__ == "__main__":
 
     nm_ids = df["nmID"].tolist()
     all_feedbacks = []  # здесь будут ВСЕ отзывы со всех nm_id
+
+
     for nm in nm_ids:
         feedbacks = wb_api_parser.get_last_feedbacks(nm, HEADERS,  URL_FEEDBACK_LIST, NUMBER_OF_FEEDBACKS_NEED) 
         if feedbacks:
@@ -44,44 +46,56 @@ if __name__ == "__main__":
         if not imt_id:
             continue
         
-        # created_raw = feedback.get("created_date") 
-        # if not created_raw:
-            # continue
+        created_raw = feedback.get("created_date") or feedback.get("createdDate") or feedback.get("created_at")
+        try:
+            created_at = (
+                created_raw if isinstance(created_raw, str)
+                else created_raw.isoformat()
+            )
+        except Exception:
+            created_at = str(created_raw)
 
-        # try:
-        #     created_date = datetime.fromisoformat(created_raw.replace("Z", "+00:00"))
-        # except Exception as e:
-        #     print(f"Ошибка преобразования .fromisoformat даты '{created_raw}': {e}")
-        #     continue
         grouped[imt_id].append({
-            "id": feedback.get("id"),
-            "created_date": feedback.get("created_date").isoformat() if isinstance(feedback.get("created_date"), datetime.datetime) else feedback.get("created_date"),
-            "rating": feedback.get("product_valuation"),
-            "imt_id": feedback.get("imt_id"),
             "nm_id": feedback.get("nm_id"),
+            "id": feedback.get("id"),
+            "created_at": created_at,
+            "is_visible": feedback.get("is_visible", True),
+            "rating": float(feedback.get("product_valuation", 0)),
             "text": feedback.get("text", ""),
             "pros": feedback.get("pros", ""),
             "cons": feedback.get("cons", ""),
             "tags": feedback.get("tags", ""),
-            "photo": feedback.get("photo_fullSize[0][0]", ""),
-            "video_preview": feedback.get("video_preview_image", "")
+            "is_answered": feedback.get("is_answered"), 
+            "answer": feedback.get("answer")
         })
 
     # --- Формирование последних 5 отзывов по каждому imt_id ---
     result = {}
 
-    for imt_id, revs in grouped.items():
+    for imt_id, feedbacks in grouped.items():
         # сортируем по дате (от новых к старым)
-        sorted_revs = sorted(revs, key=lambda r: r["created_date"], reverse=True)
+        sorted_revs = sorted(
+            feedbacks,
+            key=lambda r: r["created_at"],
+            reverse=True
+        )
+        def avg_rating(n):
+            return round(mean([r["rating"] for r in sorted_revs[:n]]) if sorted_revs[:n] else 0, 3)
+        
+        result[imt_id] = {
+            "last_5": avg_rating(5),
+            "last_10": avg_rating(10),
+            "last_20": avg_rating(20),
+            "last_30": avg_rating(30),
+            "feedbacks": sorted_revs
+        }
         # берем последние 5
-        last_5 = sorted_revs[:5]
-        # преобразуем дату обратно в строку
-        # for r in last_5:
-        #     r["created_date"] = r["created_date"].isoformat()
-        result[imt_id] = last_5
+        # last_5 = sorted_revs[:5]
+
+        # result[imt_id] = last_5
 
     # --- Запись в JSON ---
-    with open("wb_last_5_feedbacks_by_imt_id.json", "w", encoding="utf-8") as f:
+    with open("wb_feedbacks_by_imt_id.json", "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=4)
 
-    print("✅ Сохранено в wb_last_5_feedbacks_by_imt_id.json")
+    print("✅ Сохранено в wb_feedbacks_by_imt_id.json")

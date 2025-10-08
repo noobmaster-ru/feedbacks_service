@@ -66,7 +66,7 @@ if __name__ == "__main__":
         # --- Подсчёт средних рейтингов ---
         ratings = [f["rating"] for f in formatted_feedbacks]
         def avg(n):
-            return round(mean(ratings[:n]), 2) if len(ratings) >= n else round(mean(ratings), 2)
+            return round(mean(ratings[:n]), 2) if len(ratings) >= n else round(mean(ratings), 3)
 
         nm_summary = {
             "last_5": avg(5),
