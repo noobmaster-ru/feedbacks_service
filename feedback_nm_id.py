@@ -1,56 +1,91 @@
-import requests
-from statistics import mean
 import time
-from constants import ARTICLES_WB, WB_TOKEN, URL_REQUEST, TAKE_NUMBER, SKIP_NUMBER
+import json
+import datetime 
+import os 
+import pandas as pd
+from statistics import mean
 
-from services.get_list_of_feedbacks import get_list_of_feedbacks
+from dotenv import load_dotenv
+
+from services.wb_api_parsing_class import WBApiParseClass
+
 
 if __name__ == "__main__":
-    headers = {"Authorization": WB_TOKEN}
-    with open("result_nm_id.txt", "w", encoding="utf-8") as file:
-        for article_wb in ARTICLES_WB:
-            time.sleep(1.0)
-            params_not_aswered = {
-                "isAnswered": False,  # False - необработанные
-                "nmId": article_wb,
-                "take": TAKE_NUMBER,
-                "skip": SKIP_NUMBER,
-                "order": "dateDesc",  # по убыванию даты
-            }
-            params_aswered = {
-                "isAnswered": True,  # True - обработанные
-                "nmId": article_wb,
-                "take": TAKE_NUMBER,
-                "skip": SKIP_NUMBER,
-                "order": "dateDesc",
-            }
+    load_dotenv()
+    WB_TOKEN = os.getenv("WB_TOKEN")
+    NUMBER_OF_FEEDBACKS_NEED = int(os.getenv("NUMBER_OF_FEEDBACKS_NEED"))
+    URL_FEEDBACK_LIST = os.getenv("URL_FEEDBACK_LIST")
+    HEADERS = {
+        "Authorization": WB_TOKEN
+    }
 
-            # делаем два запроса одновременно
-            response_not_answered = requests.get(
-                URL_REQUEST, headers=headers, params=params_not_aswered
-            )
-            feedbacks_not_answered = get_list_of_feedbacks(response_not_answered)
+    wb_api_parser = WBApiParseClass()
 
-            response_answered = requests.get(
-                URL_REQUEST, headers=headers, params=params_aswered
-            )
-            feedbacks_answered = get_list_of_feedbacks(response_answered)
+    # --- Загружаем nm_id ---
+    file_path_nm_ids = 'wb_articles.csv'
+    df = pd.read_csv(file_path_nm_ids)
+    nm_ids = df["nmID"].tolist()
 
-            all_feedbacks: list[dict] = feedbacks_answered + feedbacks_not_answered
+    result = {}
+    total_feedbacks = 0
 
-            feedback_list_sorted = sorted(
-                all_feedbacks, key=lambda x: x["created_dt"], reverse=True
-            )
+    for nm in nm_ids:
+        feedbacks = wb_api_parser.get_last_feedbacks(nm, HEADERS, URL_FEEDBACK_LIST, NUMBER_OF_FEEDBACKS_NEED)
+        if not feedbacks:
+            print(f"⚠️ Нет отзывов для nm_id={nm}")
+            continue
 
-            # берём последние 5 отзывов
-            last_5_ratings = [
-                fb["product_valuation"] for fb in feedback_list_sorted[:5]
-            ]
-            if last_5_ratings:
-                avg_rating = round(mean(last_5_ratings), 1)
-                print(f"{article_wb}: {avg_rating}")
-                file.write(f"{article_wb}: {avg_rating}\n")
-            else:
-                print(f"{article_wb}: no feedbacks")
-                file.write(f"{article_wb}: no feedbacks\n")
-        file.close()
+        # --- Подготовка отзывов ---
+        formatted_feedbacks = []
+        for fb in feedbacks:
+            created_raw = fb.get("created_date") or fb.get("createdDate") or fb.get("created_at")
+            try:
+                created_at = (
+                    created_raw if isinstance(created_raw, str)
+                    else created_raw.isoformat()
+                )
+            except Exception:
+                created_at = str(created_raw)
+
+            formatted_feedbacks.append({
+                "id": fb.get("id"),
+                "created_at": created_at,
+                "is_visible": fb.get("is_visible", True),
+                "rating": float(fb.get("product_valuation", 0)),
+                "text": fb.get("text", ""),
+                "pros": fb.get("pros", ""),
+                "cons": fb.get("cons", ""),
+                "tags": fb.get("tags", []) or [],
+                "is_answered": fb.get("is_answered"), 
+                "answer": fb.get("answer")
+            })
+
+        # --- Сортировка по дате ---
+        formatted_feedbacks.sort(key=lambda f: f["created_at"], reverse=True)
+
+        # --- Подсчёт средних рейтингов ---
+        ratings = [f["rating"] for f in formatted_feedbacks]
+        def avg(n):
+            return round(mean(ratings[:n]), 2) if len(ratings) >= n else round(mean(ratings), 3)
+
+        nm_summary = {
+            "last_5": avg(5),
+            "last_10": avg(10),
+            "last_20": avg(20),
+            "last_30": avg(30),
+            "feedbacks": formatted_feedbacks
+        }
+
+        result[nm] = nm_summary
+        total_feedbacks += len(feedbacks)
+        print(f"✅ nm_id={nm} — собрано {len(feedbacks)} отзывов")
+
+        time.sleep(0.6)
+
+    print(f"\n📊 Всего собрано отзывов: {total_feedbacks}")
+
+    # --- Сохранение в JSON ---
+    with open("wb_feedbacks_by_nm_id.json", "w", encoding="utf-8") as f:
+        json.dump(result, f, ensure_ascii=False, indent=4)
+
+    print("✅ Сохранено в wb_feedbacks_by_nm_id.json")

@@ -1,8 +1,9 @@
-constants.py
 .venv/
 __pycache__/
 *.pyc
 .DS_Store
 feedbacks_json/
 .ruff_cache/
-*.txt
+.env
+*.json
+*.csv
